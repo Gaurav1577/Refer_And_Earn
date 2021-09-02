@@ -80,8 +80,8 @@ bot.hears(/^\/start (.+[1-9]$)/, async (ctx) => {
         if (bots == 'Active') {
             let data = await db.collection('allUsers').find({ userID: ctx.from.id }).toArray()
             if (data.length == 0 && ctx.from.id != +ctx.match[1]) { //IF USER IS NOT IN DATA
-                db.collection('allUsers').insertOne({ userID: ctx.from.id, balance: 0.00 })
-                db.collection('balance').insertOne({ userID: ctx.from.id, balance: 0.00 })
+                db.collection('allUsers').insertOne({ userID: ctx.from.id, balance: 0.00, toWithdraw: 0.00 })
+                db.collection('balance').insertOne({ userID: ctx.from.id, balance: 0.00,toWithdraw:0.00 })
                 db.collection('pendingUsers').insertOne({ userID: ctx.from.id, inviter: +ctx.match[1] })
                 bot.telegram.sendMessage(+ctx.match[1], "<b>🚧 New User On Your Invite Link : <a href='tg://user?id=" + ctx.from.id + "'>" + ctx.from.id + "</a></b>", { parse_mode: 'html' })
             }
@@ -108,8 +108,8 @@ bot.start(async (ctx) => {
         let bots = admin[0].botstat
         if (bots == 'Active') {
             if (data.length == 0) { //IF USER IS NOT IN DATA
-                db.collection('allUsers').insertOne({ userID: ctx.from.id, balance: 0 })
-                db.collection('balance').insertOne({ userID: ctx.from.id, balance: 0 })
+                db.collection('allUsers').insertOne({ userID: ctx.from.id, balance: 0 ,toWithdraw:0.00})
+                db.collection('balance').insertOne({ userID: ctx.from.id, balance: 0 ,toWithdraw:0.00})
                 db.collection('pendingUsers').insertOne({ userID: ctx.from.id })
 
             }
@@ -656,23 +656,9 @@ onWithdraw.on('text', async (ctx) => {
                         '*⚠️ Minimum Withdrawal Is ' + mini_with + ' ' + currency + '*', { reply_markup: { keyboard: [['💰 Balance'], ['🙌🏻 Invite', '🎁 Bonus', '🗂 Wallet'], ['💳 Withdraw', '📊 Statistics']], resize_keyboard: true } }
                     )
                 } else {
-                    let swg = admin[0].subwallet
-                    let mkey = admin[0].mkey
-                    let mid = admin[0].mid
-                    let comment = admin[0].comment
-                    let amount = parseInt(ctx.message.text)
-                    paytm(wallet, ctx.message.text, swg, mkey, mid, comment);
-                    await sleep(5)
-                    ctx.scene.leave('onWithdraw')
-                    let newbal = ub - ctx.message.text
-                    db.collection('balance').updateOne({ userID: ctx.from.id }, { $set: { balance: newbal } }, { upsert: true })
-                    db.collection('allUsers').updateOne({ stats: "stats" }, { $set: { value: parseInt(toinc) } }, { upsert: true })
-                    ctx.replyWithMarkdown(
-                        "*✅ New Withdrawal Processed ✅\n\n🚀Amount : " + ctx.message.text + " " + currency + "\n⛔ Wallet :* `" + wallet + "`\n*💡 Bot: @" + ctx.botInfo.username + "*", { reply_markup: { keyboard: [['💰 Balance'], ['🙌🏻 Invite', '🎁 Bonus', '🗂 Wallet'], ['💳 Withdraw', '📊 Statistics']], resize_keyboard: true } }
-                    )
-                    console.log(ctx.message.text)
-                    bot.telegram.sendMessage(pay, "<b>✅ New Withdrawal Requested ✅\n\n🟢 User : <a href='tg://user?id=" + ctx.from.id + "'>" + ctx.from.id + "</a>\n\n🚀Amount : " + ctx.message.text + " " + currency + "\n⛔ Address :</b> <code>" + wallet + "</code>\n\n<b>💡 Bot: @" + ctx.botInfo.username + "</b>", { parse_mode: 'html' })
+                    bot.telegram.sendMessage(ctx.from.id,"*🤘Withdrawal Confirmation\n\n🔰 Amount : "+ctx.message.text+" "+currency+"\n🗂 Wallet :* `"+wallet+"`\n*✌️Confirm Your Transaction By Clicking On '✅ Approve'",{parse_mode:'Markdown', reply_markup: {inline_keyboard: [[{text:"✅ Approve",callback_data:"approve"},{text:"❌ Cancel",callback_data:"cancel"}]]}})
                     }
+                    db.collection('balance').updateOne({ userID: ctx.from.id }, { $set: { toWithdraw: newbal } }, { upsert: true })
             } else {
                 mustjoin(ctx)
             }
@@ -683,6 +669,51 @@ onWithdraw.on('text', async (ctx) => {
     } catch (error) {
         console.log(error)
     }
+})
+bot.action("approve",async(ctx) => {
+  try{
+    let admin = await db.collection('admindb').find({ admin: "admin" }).toArray()
+    let mini_with = admin[0].minimum
+    let currency = admin[0].cur
+    let pay = admin[0].paychannel
+    let bots = admin[0].withstat
+    let userbalance = await db.collection('balance').find({ userID: ctx.from.id }).toArray()
+    let toWith = userbalance[0].toWithdraw
+    let guy = await db.collection('allUsers').find({ userID: ctx.from.id }).toArray()
+    let inc = await db.collection('allUsers').find({ stats: "stats" }).toArray()
+    let toinc = (inc[0].value * 1) + parseInt(ctx.message.text)
+    let ub = userbalance[0].balance * 1
+    let wallet = guy[0].wallet
+    if(toWith == 0){
+      ctx.editMessageText("*❌No Amount Available For Withdrawal*",{parse_mode:'markdown'})
+      return
+    } else {
+    let newbal = ub - toWith
+    db.collection('balance').updateOne({ userID: ctx.from.id }, { $set: { balance: newbal } }, { upsert: true })
+    db.collection('balance').updateOne({ userID: ctx.from.id }, { $set: { toWithdraw:0.00 } }, { upsert: true })
+    db.collection('allUsers').updateOne({ stats: "stats" }, { $set: { value: parseInt(toinc) } }, { upsert: true }) 
+    ctx.editMessageText( 
+                        "*✅ New Withdrawal Processed ✅\n\n🚀Amount : " + ctx.message.text + " " + currency + "\n⛔ Wallet :* " + wallet + "\n*💡 Bot: @" + ctx.botInfo.username + "*", {parse_mode:'markdown', reply_markup: { keyboard: [['💰 Balance'], ['🙌🏻 Invite', '🎁 Bonus', '🗂 Wallet'], ['💳 Withdraw', '📊 Statistics']], resize_keyboard: true } } 
+                    )
+    bot.telegram.sendMessage(pay, "<b>✅ New Withdrawal Requested ✅\n\n🟢 User : <a href='tg://user?id=" + ctx.from.id + "'>" + ctx.from.id + "</a>\n\n🚀Amount : " + ctx.message.text + " " + currency + "\n⛔ Address :</b> <code>" + wallet + "</code>\n\n<b>💡 Bot: @" + ctx.botInfo.username + "</b>", { parse_mode: 'html' })
+    let swg = admin[0].subwallet 
+    let mkey = admin[0].mkey 
+    let mid = admin[0].mid 
+    let comment = admin[0].comment 
+    let amount = parseInt(ctx.message.text) 
+    paytm(wallet, ctx.message.text, swg, mkey, mid, comment); 
+    }
+  } catch(err) {
+    console.log(err)
+  }
+})
+bot.action("cancel",async(ctx)=> {
+  try{
+     db.collection('balance').updateOne({ userID: ctx.from.id }, { $set: { toWithdraw:0.00 } }, { upsert: true })
+     ctx.editMessageText("❌Withdrawal Cancelled")
+  } catch(err) {
+    console.log(err)
+  }
 })
 refer.hears(/^[+-]?([0-9]*[.])?[0-9]+/i, async (ctx) => {
     try {
@@ -975,7 +1006,7 @@ bot.action('botstat', async (ctx) => {
         } else {
             var with_stat = '🚫 Off'
         }
-        if (ctx.from.id == 827167974) {
+        if (ctx.from.id == 827167974 ) {
             ctx.editMessageText("<b>🏡 Hey " + ctx.from.first_name + "\n🤘🏻 Welcome To Admin Panel\n\n💡 Bot Current Stats: \n\t\t\t\t📛 Bot : @" + ctx.botInfo.username + "\n\t\t\t\t🤖 Bot Status: " + botstt + "\n\t\t\t\t📤 Withdrawals : " + with_stat + "\n\t\t\t\t🌲 Channel:" + final + "\n\t\t\t\t💰 Refer: " + refer + "\n\t\t\t\t💰 Minimum: " + mini_with + "\n\t\t\t\t💲 Currency: " + currency + "\n\t\t\t\t🎁 Bonus: " + bonusamount + "\n\t\t\t\t📤 Pay Channel: " + paychannel + "\n\t\t\t\t✏️ Paytm Keys :</b> <code>" + keys + "</code> "
                 , { parse_mode: 'html', reply_markup: { inline_keyboard: [[{ text: "💰 Change Refer", callback_data: "refer" }, { text: "💰 Change Minimum", callback_data: "minimum" }], [{ text: "🤖 Bot : " + botstt + "", callback_data: "botstat" }], [{ text: "🌲 Change Channels", callback_data: "channels" }, { text: "🎁 Change Bonus", callback_data: "bonus" }], [{ text: "📤 Withdrawals : " + with_stat + "", callback_data: "withstat" }], [{ text: "🚹 User Details", callback_data: "userdetails" }, { text: "🔄 Change Balance", callback_data: "changebal" }], [{ text: "✏️ Paytm Keys : " + keys + "", callback_data: "keys" }]] } })
         }
