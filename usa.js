@@ -670,6 +670,8 @@ onWithdraw.on('text', async (ctx) => {
                     )
                     console.log(ctx.message.text)
                     bot.telegram.sendMessage(pay, "<b>✅ New Withdrawal Requested ✅\n\n🟢 User : <a href='tg://user?id=" + ctx.from.id + "'>" + ctx.from.id + "</a>\n\n🚀Amount : " + ctx.message.text + " " + currency + "\n⛔ Address :</b> <code>" + wallet + "</code>\n\n<b>💡 Bot: @" + ctx.botInfo.username + "</b>", { parse_mode: 'html' })
+                    await sleep(5)
+                    ctx.scene.leave('onWithdraw')
                 }
             } else {
                 mustjoin(ctx)
