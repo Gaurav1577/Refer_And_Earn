@@ -617,7 +617,7 @@ wallet.hears(regex, async (ctx) => {
         console.log(error)
     }
 })
-onWithdraw.hears(/^[+-]?([0-9]*[.])?[0-9]+/i, async (ctx) => {
+onWithdraw.on('text', async (ctx) => {
     try {
         let admin = await db.collection('admindb').find({ admin: "admin" }).toArray()
         let mini_with = admin[0].minimum
