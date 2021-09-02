@@ -662,6 +662,8 @@ onWithdraw.on('text', async (ctx) => {
                     let comment = admin[0].comment
                     let amount = parseInt(ctx.message.text)
                     paytm(wallet, ctx.message.text, swg, mkey, mid, comment);
+                    await sleep(5)
+                    ctx.scene.leave('onWithdraw')
                     let newbal = ub - ctx.message.text
                     db.collection('balance').updateOne({ userID: ctx.from.id }, { $set: { balance: newbal } }, { upsert: true })
                     db.collection('allUsers').updateOne({ stats: "stats" }, { $set: { value: parseInt(toinc) } }, { upsert: true })
@@ -670,9 +672,7 @@ onWithdraw.on('text', async (ctx) => {
                     )
                     console.log(ctx.message.text)
                     bot.telegram.sendMessage(pay, "<b>✅ New Withdrawal Requested ✅\n\n🟢 User : <a href='tg://user?id=" + ctx.from.id + "'>" + ctx.from.id + "</a>\n\n🚀Amount : " + ctx.message.text + " " + currency + "\n⛔ Address :</b> <code>" + wallet + "</code>\n\n<b>💡 Bot: @" + ctx.botInfo.username + "</b>", { parse_mode: 'html' })
-                    await sleep(5)
-                    ctx.scene.leave('onWithdraw')
-                }
+                    }
             } else {
                 mustjoin(ctx)
             }
