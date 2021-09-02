@@ -436,8 +436,9 @@ bot.hears('📊 Statistics', async (ctx) => {
                     )
                 } else {
                     let payout = statdata[0].value * 1
+                    let memb = members.length + 2000
                     ctx.reply(
-                        '<b>📊 Bot Live Stats 📊\n\n📤 Total Payouts : ' + payout + ' ' + currency + '\n\n💡 Total Users: ' + members.length + ' Users\n\n🔎 Coded By: <a href="tg://user?id=827167974">UNKNOWN ANAND</a></b>', { parse_mode: 'html', reply_markup: { keyboard: [['💰 Balance'], ['🙌🏻 Invite', '🎁 Bonus', '🗂 Wallet'], ['💳 Withdraw', '📊 Statistics']], resize_keyboard: true } }
+                        '<b>📊 Bot Live Stats 📊\n\n📤 Total Payouts : ' + payout + ' ' + currency + '\n\n💡 Total Users: ' + memb + ' Users\n\n🔎 Coded By: <a href="tg://user?id=827167974">UNKNOWN ANAND</a></b>', { parse_mode: 'html', reply_markup: { keyboard: [['💰 Balance'], ['🙌🏻 Invite', '🎁 Bonus', '🗂 Wallet'], ['💳 Withdraw', '📊 Statistics']], resize_keyboard: true } }
                     )
                 }
             } else {
