@@ -358,7 +358,7 @@ bot.hears('💳 Withdraw', async (ctx) => {
                             '*⚠️ Set Your Wallet Using : *`🗂 Wallet`', { reply_markup: { keyboard: [['💰 Balance'], ['🙌🏻 Invite', '🎁 Bonus', '🗂 Wallet'], ['💳 Withdraw', '📊 Statistics']], resize_keyboard: true } }
                         )
                     } else {
-                        bot.telegram.sendMessage(ctx.from.id, "*📤 Enter Amount To Withdraw*", {
+                       await bot.telegram.sendMessage(ctx.from.id, "*📤 Enter Amount To Withdraw*", {
                             parse_mode: 'markdown', reply_markup: {
                                 keyboard: [['⛔ Cancel']], resize_keyboard: true
                             }
